@@ -1,6 +1,5 @@
 import bcrypt from "bcryptjs";
-import mongoose, { Document, Model } from "mongoose";
-import crypto from "crypto";
+import mongoose, { Document } from "mongoose";
 
 export interface IUser {
 	name: string;
@@ -11,14 +10,11 @@ export interface IUser {
 	botVerified: boolean;
 	provider: "credentials" | "google";
 	emailVerified: Date | null;
-	emailVerificationToken?: string | null;
-	emailVerificationExpires?: Date | null;
-	createdAt?: Date;
-	updatedAt?: Date;
 }
 
 export interface IUserDocument extends IUser, Document {
-	generateEmailVerificationToken(): string;
+	createdAt?: Date;
+	updatedAt?: Date;
 }
 
 const UserSchema = new mongoose.Schema<IUserDocument>(
@@ -39,7 +35,12 @@ const UserSchema = new mongoose.Schema<IUserDocument>(
 			},
 		},
 		googleId: { type: String, unique: true, sparse: true },
-		youtubeChannelId: { type: String, default: null },
+		youtubeChannelId: {
+			type: String,
+			default: null,
+			unique: true,
+			sparse: true,
+		},
 		botVerified: { type: Boolean, default: false },
 		provider: {
 			type: String,
@@ -47,26 +48,9 @@ const UserSchema = new mongoose.Schema<IUserDocument>(
 			required: true,
 		},
 		emailVerified: { type: Date, default: null },
-		emailVerificationToken: { type: String, select: false },
-		emailVerificationExpires: { type: Date, select: false },
 	},
 	{ timestamps: true },
 );
-
-UserSchema.methods.generateEmailVerificationToken = function (
-	this: IUserDocument,
-) {
-	const token = crypto.randomBytes(32).toString("hex");
-
-	this.emailVerificationToken = crypto
-		.createHash("sha256")
-		.update(token)
-		.digest("hex");
-
-	this.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-	return token;
-};
 
 UserSchema.pre("save", async function (this: IUserDocument) {
 	if (!this.isModified("password") || !this.password) return;
@@ -78,7 +62,7 @@ UserSchema.pre("save", async function (this: IUserDocument) {
 	}
 });
 
-const User: Model<IUserDocument> =
+const User =
 	mongoose.models.User || mongoose.model<IUserDocument>("User", UserSchema);
 
 export default User;

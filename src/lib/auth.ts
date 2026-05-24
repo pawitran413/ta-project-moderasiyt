@@ -9,6 +9,7 @@ declare module "next-auth" {
 	interface Session {
 		user: {
 			id: string;
+			youtubeChannelId: string | null;
 		} & DefaultSession["user"];
 	}
 }
@@ -46,10 +47,6 @@ export const authOptions: AuthOptions = {
 					throw new Error("Email atau password salah");
 				}
 
-				if (!user.emailVerified) {
-					throw new Error("Verifikasi email anda terlebih dahulu");
-				}
-
 				return {
 					id: user._id.toString(),
 					email: user.email,
@@ -60,44 +57,43 @@ export const authOptions: AuthOptions = {
 		GoogleProvider({
 			clientId: process.env.GOOGLE_CLIENT_ID || "",
 			clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+			authorization: {
+				params: {
+					scope:
+						"openid email profile https://www.googleapis.com/auth/youtube.readonly",
+				},
+			},
 		}),
 	],
 	callbacks: {
-		async signIn({ user, account }) {
+		async signIn({ user, account, profile }) {
+			if (account?.provider === "credentials") return true;
+
+			// ⚠️ PERBAIKAN UTAMA: Mengubah fungsi OAuth menjadi alat penaut kepemilikan channel
 			if (account?.provider === "google") {
 				if (!user.email) return false;
 
 				await connectDB();
+				const incomingYoutubeChannelId = profile?.sub;
+
+				// Guard Clause: Pastikan ID Channel ini tidak sedang dibajak atau dipakai akun lain
+				const channelOccupied = await User.findOne({
+					youtubeChannelId: incomingYoutubeChannelId,
+				});
+				if (channelOccupied && channelOccupied.email !== user.email) {
+					throw new Error(
+						"Channel YouTube ini sudah terhubung dengan akun lain!",
+					);
+				}
+
 				const existingUser = await User.findOne({ email: user.email });
 
 				if (existingUser) {
-					if (!existingUser.emailVerified) {
-						throw new Error("Email telah terdaftar, verifikasi email anda");
-					}
-
-					if (!existingUser.googleId) {
-						existingUser.googleId = account?.providerAccountId;
-						await existingUser.save();
-					}
-
+					// Update dan kunci kredensial dari jabat tangan Google resmi
+					existingUser.googleId = account?.providerAccountId;
+					existingUser.youtubeChannelId = incomingYoutubeChannelId;
+					await existingUser.save();
 					return true;
-				}
-
-				try {
-					await User.create({
-						name: user.name || "",
-						email: user.email,
-						googleId: account.providerAccountId,
-						provider: "google",
-						emailVerified: new Date(),
-						youtubeChannelId: null,
-						botVerified: false,
-					});
-
-					return true;
-				} catch (error) {
-					console.error("Gagal membuat user baru via google", error);
-					return false;
 				}
 			}
 
@@ -109,12 +105,21 @@ export const authOptions: AuthOptions = {
 				token.id = user.id;
 			}
 
+			if (token.email) {
+				await connectDB();
+				const dbUser = await User.findOne({ email: token.email });
+				if (dbUser) {
+					token.youtubeChannelId = dbUser.youtubeChannelId;
+				}
+			}
+
 			return token;
 		},
 
 		async session({ session, token }) {
 			if (session.user) {
 				session.user.id = String(token.id);
+				session.user.youtubeChannelId = String(token.youtubeChannelId);
 			}
 
 			return session;
