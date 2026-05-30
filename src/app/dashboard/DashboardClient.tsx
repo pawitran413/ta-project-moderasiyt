@@ -1,5 +1,6 @@
 "use client";
 
+import { scanVideo } from "@/actions/scanActions";
 import { Session } from "next-auth";
 import { useState } from "react";
 
@@ -21,27 +22,40 @@ const DashboardClient = ({ session }: { session: Session }) => {
 	const handleSubmit = async (event: React.SubmitEvent) => {
 		event.preventDefault();
 		setIsLoading(true);
-		const data = { video_url: event.target.urlVideo.value };
+		const videoUrl = event.target.urlVideo.value;
+		console.log(videoUrl);
 
-		try {
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_BACKEND_ML_URL}/predict`,
-				{
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(data),
-				},
-			);
+		const result = await scanVideo(videoUrl);
+		console.log(result);
 
-			if (!response.ok) throw new Error("Gagal mengambil data");
-			const result = await response.json();
-			setHasilPrediksi(result.hasil_analisis_ml);
+		if (!result.success) {
+			console.error(result.message);
+		} else {
+			setHasilPrediksi(result.data.hasil_analisis_ml);
 			event.target.reset();
-		} catch (error) {
-			console.error(error);
-		} finally {
-			setIsLoading(false);
 		}
+
+		setIsLoading(false);
+
+		// try {
+		// 	const response = await fetch(
+		// 		`${process.env.NEXT_PUBLIC_BACKEND_ML_URL}/predict`,
+		// 		{
+		// 			method: "POST",
+		// 			headers: { "Content-Type": "application/json" },
+		// 			body: JSON.stringify(data),
+		// 		},
+		// 	);
+
+		// 	if (!response.ok) throw new Error("Gagal mengambil data");
+		// 	const result = await response.json();
+		// 	setHasilPrediksi(result.hasil_analisis_ml);
+		// 	event.target.reset();
+		// } catch (error) {
+		// 	console.error(error);
+		// } finally {
+		// 	setIsLoading(false);
+		// }
 	};
 
 	return (
@@ -60,7 +74,7 @@ const DashboardClient = ({ session }: { session: Session }) => {
 						name="urlVideo"
 						id="urlVideo"
 						className="p-1 rounded-sm border border-[#ccc]/10"
-            required
+						required
 					/>
 				</div>
 
@@ -72,27 +86,31 @@ const DashboardClient = ({ session }: { session: Session }) => {
 				</button>
 			</form>
 
-			<table>
-				<thead>
-					<tr>
-						<th>Label</th>
-						<th>Komentar</th>
-					</tr>
-				</thead>
-				<tbody>
-					{hasilPrediksi.map((data, index) => (
-						<tr
-							key={index}
-							className={
-								data.prediksi_svm_utama.label == "Spam" ? "text-red-600" : ""
-							}
-						>
-							<td className="px-2">{data.prediksi_svm_utama.label}</td>
-							<td className="px-2">{data.teks_komentar}</td>
+			{hasilPrediksi.length > 0 && (
+				<table>
+					<thead>
+						<tr>
+							<th>Label</th>
+							<th>Komentar</th>
+							<th>Status Tindakan</th>
 						</tr>
-					))}
-				</tbody>
-			</table>
+					</thead>
+					<tbody>
+						{hasilPrediksi.map((data, index) => (
+							<tr
+								key={index}
+								className={
+									data.prediksi_svm_utama.label == "Spam" ? "text-red-600" : ""
+								}
+							>
+								<td className="px-2">{data.prediksi_svm_utama.label}</td>
+								<td className="px-2">{data.teks_komentar}</td>
+								{/* <td className="px-2">{data.tindakan_diambil}</td> */}
+							</tr>
+						))}
+					</tbody>
+				</table>
+			)}
 		</div>
 	);
 };

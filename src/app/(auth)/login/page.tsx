@@ -35,9 +35,8 @@ const LoginPage = () => {
 				return;
 			}
 
-			formElement.reset();
 			router.push(callbackUrl);
-			router.refresh();
+			formElement.reset();
 		} catch {
 			setIsLoading(false);
 			setError("Terjadi kesalahan");
