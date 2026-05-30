@@ -41,9 +41,11 @@ export async function registerUser(rawFormData: unknown) {
 		return { success: true, message: "Registrasi berhasil" };
 	} catch (error) {
 		if (error instanceof z.ZodError) {
+			console.error(error)
 			return { success: false, message: error.issues[0].message };
 		}
 
+		console.error(error)
 		return { success: false, message: "Terjadi kesalahan pada server" };
 	}
 }

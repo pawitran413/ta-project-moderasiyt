@@ -26,7 +26,7 @@ const RegisterPage = () => {
 			setError(result.message || "Terjadi kesalahan");
 		} else {
 			formElement.reset();
-			router.push("/auth/login");
+			router.push("/login");
 		}
 	};
 
@@ -79,7 +79,7 @@ const RegisterPage = () => {
 			</form>
 			<p className="text-center mt-4">
 				Sudah punya akun?{" "}
-				<Link href={"/auth/login"} className="text-blue-600">
+				<Link href={"/login"} className="text-blue-600">
 					Login
 				</Link>
 			</p>

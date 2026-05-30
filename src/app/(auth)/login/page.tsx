@@ -1,12 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 
 const LoginPage = () => {
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const callbackUrl = searchParams.get("callbackUrl") || "/";
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
 
@@ -23,6 +25,7 @@ const LoginPage = () => {
 				email: data.email,
 				password: data.password,
 				redirect: false,
+				callbackUrl,
 			});
 
 			setIsLoading(false);
@@ -33,7 +36,7 @@ const LoginPage = () => {
 			}
 
 			formElement.reset();
-			router.push("/");
+			router.push(callbackUrl);
 			router.refresh();
 		} catch {
 			setIsLoading(false);
@@ -79,7 +82,7 @@ const LoginPage = () => {
 			</form>
 			<p className="text-center mt-4">
 				Belum punya akun?{" "}
-				<Link href={"/auth/register"} className="text-blue-600">
+				<Link href={"/register"} className="text-blue-600">
 					Register
 				</Link>
 			</p>

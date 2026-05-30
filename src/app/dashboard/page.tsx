@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-type THasilAnalisis = {
+type THasilPrediksi = {
 	komentar_id: string;
 	username_pengirim: string;
 	teks_komentar: string;
@@ -14,7 +14,7 @@ type THasilAnalisis = {
 }[];
 
 const DashboardPage = () => {
-	const [hasilPrediksi, setHasilPrediksi] = useState<THasilAnalisis>([]);
+	const [hasilPrediksi, setHasilPrediksi] = useState<THasilPrediksi>([]);
 	const [isLoading, setIsLoading] = useState(false);
 
 	const handleSubmit = async (event: React.SubmitEvent) => {

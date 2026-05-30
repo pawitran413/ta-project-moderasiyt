@@ -6,7 +6,7 @@ export interface IUser {
 	email: string;
 	password?: string;
 	googleId?: string;
-	youtubeChannelId: string | null;
+	youtubeChannelId?: string;
 	botVerified: boolean;
 	provider: "credentials" | "google";
 	emailVerified: Date | null;
@@ -37,7 +37,7 @@ const UserSchema = new mongoose.Schema<IUserDocument>(
 		googleId: { type: String, unique: true, sparse: true },
 		youtubeChannelId: {
 			type: String,
-			default: null,
+			// default: null,
 			unique: true,
 			sparse: true,
 		},
