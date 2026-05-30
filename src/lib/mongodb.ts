@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const MONGODB_URL = process.env.MONGODB_URL || "";
 
 if (!MONGODB_URL) {
-	throw new Error("Definisikan MONGODB_URI di .env.local");
+	throw new Error("Definisikan MONGODB_URL di .env.local");
 }
 
 declare global {

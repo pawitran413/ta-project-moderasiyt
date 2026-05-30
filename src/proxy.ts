@@ -7,7 +7,16 @@ export const proxy = async (request: NextRequest) => {
 		secret: process.env.NEXTAUTH_SECRET,
 	});
 
-	if (!token) {
+	const { pathname } = request.nextUrl;
+	const isAuthPage =
+		pathname.startsWith("/login") || pathname.startsWith("/register");
+	const isRequireAuth = pathname.startsWith("/dashboard");
+
+	if (token && isAuthPage) {
+		return NextResponse.redirect(new URL("/dashboard", request.url));
+	}
+
+	if (!token && isRequireAuth) {
 		const loginUrl = new URL("/login", request.url);
 		loginUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
 		return NextResponse.redirect(loginUrl);
@@ -17,5 +26,6 @@ export const proxy = async (request: NextRequest) => {
 };
 
 export const config = {
-	matcher: ["/dashboard/:path*"],
+	// matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+	matcher: ["/dashboard/:path*", "/login", "/register"],
 };
