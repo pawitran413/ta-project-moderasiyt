@@ -1,22 +1,11 @@
 "use client";
 
-import { scanVideo } from "@/actions/scanActions";
+import { scanVideo, TKomentarML } from "@/actions/scanActions";
 import { Session } from "next-auth";
 import { useState } from "react";
 
-type THasilPrediksi = {
-	komentar_id: string;
-	username_pengirim: string;
-	teks_komentar: string;
-	timestamp_komentar: string;
-	prediksi_svm_utama: {
-		label: "Normal" | "Spam";
-		confidence_score: number;
-	};
-}[];
-
 const DashboardClient = ({ session }: { session: Session }) => {
-	const [hasilPrediksi, setHasilPrediksi] = useState<THasilPrediksi>([]);
+	const [hasilPrediksi, setHasilPrediksi] = useState<TKomentarML[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 
 	const handleSubmit = async (event: React.SubmitEvent) => {
@@ -36,26 +25,6 @@ const DashboardClient = ({ session }: { session: Session }) => {
 		}
 
 		setIsLoading(false);
-
-		// try {
-		// 	const response = await fetch(
-		// 		`${process.env.NEXT_PUBLIC_BACKEND_ML_URL}/predict`,
-		// 		{
-		// 			method: "POST",
-		// 			headers: { "Content-Type": "application/json" },
-		// 			body: JSON.stringify(data),
-		// 		},
-		// 	);
-
-		// 	if (!response.ok) throw new Error("Gagal mengambil data");
-		// 	const result = await response.json();
-		// 	setHasilPrediksi(result.hasil_analisis_ml);
-		// 	event.target.reset();
-		// } catch (error) {
-		// 	console.error(error);
-		// } finally {
-		// 	setIsLoading(false);
-		// }
 	};
 
 	return (
@@ -90,20 +59,25 @@ const DashboardClient = ({ session }: { session: Session }) => {
 				<table>
 					<thead>
 						<tr>
-							<th>Label</th>
+							<th>Label SVM</th>
+							<th>Label NB</th>
 							<th>Komentar</th>
 							<th>Status Tindakan</th>
 						</tr>
 					</thead>
 					<tbody>
 						{hasilPrediksi.map((data, index) => (
-							<tr
-								key={index}
-								className={
-									data.prediksi_svm_utama.label == "Spam" ? "text-red-600" : ""
-								}
-							>
-								<td className="px-2">{data.prediksi_svm_utama.label}</td>
+							<tr key={index}>
+								<td
+									className={`px-2 ${data.prediksi_svm_utama.label == "Spam" && "text-red-600"}`}
+								>
+									{data.prediksi_svm_utama.label}
+								</td>
+								<td
+									className={`px-2 ${data.prediksi_nb_pembanding.label == "Spam" && "text-red-600"}`}
+								>
+									{data.prediksi_nb_pembanding.label}
+								</td>
 								<td className="px-2">{data.teks_komentar}</td>
 								{/* <td className="px-2">{data.tindakan_diambil}</td> */}
 							</tr>

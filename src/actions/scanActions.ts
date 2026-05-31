@@ -11,13 +11,13 @@ type TPrediksiLabel = {
 	confidence_score: number;
 };
 
-type TKomentarML = {
+export type TKomentarML = {
 	komentar_id: string;
 	username_pengirim: string;
 	teks_komentar: string;
 	timestamp_komentar: string;
 	prediksi_svm_utama: TPrediksiLabel;
-	prediksi_nb_pembanding?: TPrediksiLabel;
+	prediksi_nb_pembanding: TPrediksiLabel;
 };
 
 type TMLResponse = {
@@ -89,12 +89,19 @@ export async function scanVideo(videoUrl: string): Promise<TScanResult> {
 				waktu_diproses: waktuDiproses,
 			}));
 
-		await ModerationHistory.insertMany(dokumen);
+		if (dokumen.length > 0) {
+			await ModerationHistory.insertMany(dokumen, { ordered: false }).catch(
+				(error) => {
+					if (error.code !== 11000 && error.name !== "BulkWriteError") {
+						throw error;
+					}
+				},
+			);
+		}
 	} catch (error) {
-    console.error(error);
+		console.error(error);
 		return { success: false, message: "Gagal menyimpan hasil ke database" };
 	}
-  
+
 	return { success: true, data: mlData };
-  // return { success: true, data: mlData, dokumen };
 }

@@ -65,10 +65,8 @@ const ModerationHistorySchema = new Schema<IModerationHistoryDocument>(
 		},
 		video_metadata: {
 			video_id: { type: String },
-			// video_id: { type: String, required: true },
 			video_url: { type: String, required: true },
 			judul_video: { type: String },
-			// judul_video: { type: String, required: true },
 		},
 		data_komentar: {
 			komentar_id: { type: String, required: true },
@@ -79,7 +77,6 @@ const ModerationHistorySchema = new Schema<IModerationHistoryDocument>(
 		hasil_analisis_ml: {
 			prediksi_svm_utama: { type: PrediksiLabelSchema, required: true },
 			prediksi_nb_pembanding: { type: PrediksiLabelSchema },
-			// prediksi_nb_pembanding: { type: PrediksiLabelSchema, required: true },
 		},
 		status_tindakan: {
 			tindakan_diambil: {
@@ -93,6 +90,11 @@ const ModerationHistorySchema = new Schema<IModerationHistoryDocument>(
 		waktu_diproses: { type: Date, default: Date.now },
 	},
 	{ timestamps: false },
+);
+
+ModerationHistorySchema.index(
+	{ user_id: 1, "data_komentar.komentar_id": 1 },
+	{ unique: true },
 );
 
 const ModerationHistory =
