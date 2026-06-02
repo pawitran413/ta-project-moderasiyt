@@ -14,7 +14,7 @@ const HistoryPage = async ({
 	const session = await getServerSession(authOptions);
 	const { page } = await searchParams;
 
-	const currentPage = Math.max(1, parseInt(page ?? "1"));
+	const currentPage = Math.max(1, parseInt(page ?? "1") || 1);
 	const skip = (currentPage - 1) * ITEMS_PER_PAGE;
 
 	await connectDB();

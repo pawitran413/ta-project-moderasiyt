@@ -10,7 +10,8 @@ export const proxy = async (request: NextRequest) => {
 	const { pathname } = request.nextUrl;
 	const isAuthPage =
 		pathname.startsWith("/login") || pathname.startsWith("/register");
-	const isRequireAuth = pathname.startsWith("/dashboard");
+	const isRequireAuth =
+		pathname.startsWith("/dashboard") || pathname.startsWith("/history");
 
 	if (token && isAuthPage) {
 		return NextResponse.redirect(new URL("/dashboard", request.url));
@@ -27,5 +28,5 @@ export const proxy = async (request: NextRequest) => {
 
 export const config = {
 	// matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
-	matcher: ["/dashboard/:path*", "/login", "/register"],
+	matcher: ["/dashboard/:path*", "/history/:path*", "/login", "/register"],
 };
