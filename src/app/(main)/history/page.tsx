@@ -31,7 +31,7 @@ const HistoryPage = async ({
 	const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
 
 	return (
-		<div className="m-10">
+		<div>
 			<h1>History</h1>
 
 			<table className="w-full">

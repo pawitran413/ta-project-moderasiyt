@@ -12,13 +12,13 @@ const Navbar = () => {
 	const pathname = usePathname();
 
 	return (
-		<div className="flex w-full justify-center py-6 bg-black">
-			<div className="flex border border-white/20 rounded-full">
+		<div className="flex w-full justify-center bg-black">
+			<div className="flex border border-white/20 rounded-full p-1">
 				{NAV_LINKS.map(({ href, label }) => (
 					<Link
 						key={href}
 						href={href}
-						className={`px-5 py-1 rounded-full ${pathname.startsWith(href) && "bg-white/20"}`}
+						className={`px-5 py-1 rounded-full hover:bg-white/10 ${pathname.startsWith(href) && "bg-white text-black"}`}
 					>
 						{label}
 					</Link>

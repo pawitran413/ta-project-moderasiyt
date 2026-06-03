@@ -7,53 +7,69 @@ import { useState } from "react";
 const DashboardClient = ({ session }: { session: Session }) => {
 	const [hasilPrediksi, setHasilPrediksi] = useState<TKomentarML[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState("");
 
 	const handleSubmit = async (event: React.SubmitEvent) => {
 		event.preventDefault();
 		setIsLoading(true);
+		setError("");
 		const videoUrl = event.target.urlVideo.value;
-		console.log(videoUrl);
 
 		const result = await scanVideo(videoUrl);
 		console.log(result);
 
 		if (!result.success) {
 			console.error(result.message);
-		} else {
-			setHasilPrediksi(result.data.hasil_analisis_ml);
-			event.target.reset();
+			setIsLoading(false);
+			return;
 		}
 
+		if (result.data.hasil_analisis_ml.length == 0) {
+			setError("No comments on this video");
+			setIsLoading(false);
+			return;
+		}
+
+		setHasilPrediksi(result.data.hasil_analisis_ml);
+		event.target.reset();
 		setIsLoading(false);
 	};
 
 	return (
-		<div className="m-10">
-			<h1>Dashboard</h1>
-			<p>{session.user.name}</p>
+		<div className="flex flex-col gap-7">
+			<div>
+				<p>Login as: {session.user.name}</p>
+			</div>
 
 			<form
-				className="flex flex-col gap-3 w-100 mx-auto"
+				className="flex flex-col gap-3 w-100 mx-auto border border-white/25 p-5 rounded-lg"
 				onSubmit={handleSubmit}
 			>
-				<div className="flex flex-col">
-					<label htmlFor="urlVideo">URL Video YouTube</label>
+				<div className="flex flex-col gap-1">
+					<label htmlFor="urlVideo" className="px-4 text-center">
+						URL Video YouTube
+					</label>
 					<input
-						type="text"
+						type="url"
 						name="urlVideo"
 						id="urlVideo"
-						className="p-1 rounded-sm border border-[#ccc]/10"
+						pattern="https:\/\/(www\.)?(youtube\.com|youtu\.be).*"
+						placeholder="https://www.youtube.com/watch?v=tGv7CUutzqU"
+						className="py-1.5 px-4 rounded-full border border-[#ccc]/25"
 						required
 					/>
 				</div>
 
 				<button
 					type="submit"
-					className="p-2 bg-[#4f46e5] text-white rounded-sm cursor-pointer mt-3"
+					disabled={isLoading}
+					className="p-1.5 bg-white text-black rounded-full cursor-pointer mt-3"
 				>
-					{isLoading ? "Memproses..." : "Mulai Scan"}
+					{isLoading ? "Processing..." : "Scan"}
 				</button>
 			</form>
+
+			{error && <p className="text-center">{error}</p>}
 
 			{hasilPrediksi.length > 0 && (
 				<table>
@@ -62,7 +78,6 @@ const DashboardClient = ({ session }: { session: Session }) => {
 							<th>Label SVM</th>
 							<th>Label NB</th>
 							<th>Komentar</th>
-							<th>Status Tindakan</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -79,7 +94,6 @@ const DashboardClient = ({ session }: { session: Session }) => {
 									{data.prediksi_nb_pembanding.label}
 								</td>
 								<td className="px-2">{data.teks_komentar}</td>
-								{/* <td className="px-2">{data.tindakan_diambil}</td> */}
 							</tr>
 						))}
 					</tbody>
