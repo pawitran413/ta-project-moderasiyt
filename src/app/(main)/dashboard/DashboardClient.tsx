@@ -1,38 +1,63 @@
 "use client";
 
+import hideComment from "@/actions/moderateActions";
 import { scanVideo, TKomentarML } from "@/actions/scanActions";
 import { Session } from "next-auth";
 import { useState } from "react";
 
 const DashboardClient = ({ session }: { session: Session }) => {
 	const [hasilPrediksi, setHasilPrediksi] = useState<TKomentarML[]>([]);
-	const [isLoading, setIsLoading] = useState(false);
+	const [isScanLoading, setIsScanLoading] = useState(false);
+	const [isHideLoading, setIsHideLoading] = useState(false);
 	const [error, setError] = useState("");
+	console.log(hasilPrediksi)
 
 	const handleSubmit = async (event: React.SubmitEvent) => {
 		event.preventDefault();
-		setIsLoading(true);
+		setIsScanLoading(true);
 		setError("");
 		const videoUrl = event.target.urlVideo.value;
 
 		const result = await scanVideo(videoUrl);
-		console.log(result);
 
 		if (!result.success) {
 			console.error(result.message);
-			setIsLoading(false);
+			setIsScanLoading(false);
 			return;
 		}
 
 		if (result.data.hasil_analisis_ml.length == 0) {
 			setError("No comments on this video");
-			setIsLoading(false);
+			setIsScanLoading(false);
 			return;
 		}
 
 		setHasilPrediksi(result.data.hasil_analisis_ml);
 		event.target.reset();
-		setIsLoading(false);
+		setIsScanLoading(false);
+	};
+
+	const spamCommentId = hasilPrediksi
+		.filter((comment) => comment.prediksi_svm_utama.label === "Spam")
+		.map((comment) => String(comment.komentar_id));
+	// console.log(spamCommentId);
+
+	const handleHideComments = async () => {
+		if (spamCommentId.length == 0) return;
+
+		setIsHideLoading(true);
+		setError("");
+		try {
+			const result = await hideComment(spamCommentId);
+			if (!result.success) {
+				setError(result.message);
+				return;
+			}
+		} catch (error) {
+			setError(`Terjadi kesalahan saat memproses permmintaan: ${error}`);
+		} finally {
+			setIsHideLoading(false);
+		}
 	};
 
 	return (
@@ -62,38 +87,52 @@ const DashboardClient = ({ session }: { session: Session }) => {
 
 				<button
 					type="submit"
-					disabled={isLoading}
+					disabled={isScanLoading}
 					className="p-1.5 bg-white text-black rounded-full cursor-pointer mt-3"
 				>
-					{isLoading ? "Processing..." : "Scan"}
+					{isScanLoading ? "Processing..." : "Scan"}
 				</button>
 			</form>
 
 			{error && <p className="text-center">{error}</p>}
 
+			{spamCommentId.length > 0 && (
+				<button
+					type="button"
+					disabled={isHideLoading}
+					className="w-80 py-1.5 bg-white text-black rounded-full cursor-pointer mt-3 mx-auto"
+					onClick={handleHideComments}
+				>
+					{isHideLoading ? "Processing..." : "Hide spam comments"}
+				</button>
+			)}
+
 			{hasilPrediksi.length > 0 && (
 				<table>
 					<thead>
 						<tr>
-							<th>Label SVM</th>
-							<th>Label NB</th>
+							<th className="whitespace-nowrap px-2">Label SVM</th>
+							<th className="whitespace-nowrap px-2">Label NB</th>
 							<th>Komentar</th>
 						</tr>
 					</thead>
 					<tbody>
 						{hasilPrediksi.map((data, index) => (
-							<tr key={index}>
+							<tr
+								key={index}
+								className="border-b border-white/15 last:border-none"
+							>
 								<td
-									className={`px-2 ${data.prediksi_svm_utama.label == "Spam" && "text-red-600"}`}
+									className={`text-center ${data.prediksi_svm_utama.label == "Spam" && "text-red-600"}`}
 								>
 									{data.prediksi_svm_utama.label}
 								</td>
 								<td
-									className={`px-2 ${data.prediksi_nb_pembanding.label == "Spam" && "text-red-600"}`}
+									className={`text-center ${data.prediksi_nb_pembanding.label == "Spam" && "text-red-600"}`}
 								>
 									{data.prediksi_nb_pembanding.label}
 								</td>
-								<td className="px-2">{data.teks_komentar}</td>
+								<td className="pl-4 py-2">{data.teks_komentar}</td>
 							</tr>
 						))}
 					</tbody>

@@ -18,7 +18,7 @@ const Navbar = () => {
 					<Link
 						key={href}
 						href={href}
-						className={`px-5 py-1 rounded-full hover:bg-white/10 ${pathname.startsWith(href) && "bg-white text-black"}`}
+						className={`px-5 py-1 rounded-full ${pathname.startsWith(href) ? "bg-white text-black" : "hover:bg-white/10"}`}
 					>
 						{label}
 					</Link>
