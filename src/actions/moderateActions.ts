@@ -11,12 +11,15 @@ const hideComment = async (spamCommentId: string[]) => {
 				ban_author: false,
 			}),
 		});
+		const data = await response.json();
 
 		if (!response.ok) {
 			return { success: false, message: "Gagal terhubung ke backend ML" };
 		}
+		if (data.failed > 0) {
+			return { success: false, message: "Gagal menghapus komentar" };
+		}
 
-		const data = await response.json();
 		return { success: true, message: "Komentar berhasil disembunyikan", data };
 	} catch (error) {
 		console.error("Gagal hide comment: ", error);

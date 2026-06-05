@@ -6,7 +6,7 @@ export interface IUser {
 	email: string;
 	password?: string;
 	googleId?: string;
-	youtubeChannelId?: string;
+	youtubeChannelId?: string | null;
 	botVerified: boolean;
 	provider: "credentials" | "google";
 	emailVerified: Date | null;

@@ -13,6 +13,12 @@ declare module "next-auth" {
 		} & DefaultSession["user"];
 	}
 }
+declare module "next-auth/jwt" {
+	interface JWT {
+		id?: string;
+		youtubeChannelId: string | null;
+	}
+}
 
 export const authOptions: AuthOptions = {
 	providers: [
@@ -109,7 +115,11 @@ export const authOptions: AuthOptions = {
 				await connectDB();
 				const dbUser = await User.findOne({ email: token.email });
 				if (dbUser) {
-					token.youtubeChannelId = dbUser.youtubeChannelId;
+					if (dbUser.youtubeChannelId) {
+						token.youtubeChannelId = dbUser.youtubeChannelId;
+					} else {
+						token.youtubeChannelId = null;
+					}
 				}
 			}
 
@@ -119,7 +129,7 @@ export const authOptions: AuthOptions = {
 		async session({ session, token }) {
 			if (session.user) {
 				session.user.id = String(token.id);
-				session.user.youtubeChannelId = String(token.youtubeChannelId);
+				session.user.youtubeChannelId = token.youtubeChannelId;
 			}
 
 			return session;

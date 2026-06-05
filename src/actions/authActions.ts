@@ -34,7 +34,7 @@ export async function registerUser(rawFormData: unknown) {
 			password: validatedData.password,
 			provider: "credentials",
 			emailVerified: new Date(),
-			youtubeChannelId: null,
+			// youtubeChannelId: null,
 			botVerified: false,
 		});
 
