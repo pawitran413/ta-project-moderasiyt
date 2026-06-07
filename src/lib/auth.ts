@@ -67,60 +67,75 @@ export const authOptions: AuthOptions = {
 				params: {
 					scope:
 						"openid email profile https://www.googleapis.com/auth/youtube.readonly",
+					prompt: "select_account",
 				},
 			},
 		}),
 	],
 	callbacks: {
-		async signIn({ user, account, profile }) {
+		async signIn({ user, account }) {
 			if (account?.provider === "credentials") return true;
 
-			// ⚠️ PERBAIKAN UTAMA: Mengubah fungsi OAuth menjadi alat penaut kepemilikan channel
 			if (account?.provider === "google") {
 				if (!user.email) return false;
-
 				await connectDB();
-				const incomingYoutubeChannelId = profile?.sub;
 
-				// Guard Clause: Pastikan ID Channel ini tidak sedang dibajak atau dipakai akun lain
-				const channelOccupied = await User.findOne({
-					youtubeChannelId: incomingYoutubeChannelId,
-				});
-				if (channelOccupied && channelOccupied.email !== user.email) {
-					throw new Error(
-						"Channel YouTube ini sudah terhubung dengan akun lain!",
+				let youtubeChannelId: string | null = null;
+				try {
+					const ytRes = await fetch(
+						"https://www.googleapis.com/youtube/v3/channels?part=id&mine=true",
+						{
+							headers: {
+								Authorization: `Bearer ${account.access_token}`,
+							},
+						},
 					);
+					const ytData = await ytRes.json();
+					youtubeChannelId = ytData.items?.[0]?.id ?? null;
+				} catch {
+					return "/error?error=YoutubeChannelFetchFailed";
+				}
+
+				if (!youtubeChannelId) {
+					return "/error?error=NoYoutubeChannel";
+				}
+
+				const channelOccupied = await User.findOne({ youtubeChannelId });
+				if (channelOccupied && channelOccupied.email !== user.email) {
+					return "/error?error=ChannelAlreadyLinked";
 				}
 
 				const existingUser = await User.findOne({ email: user.email });
-
 				if (existingUser) {
-					// Update dan kunci kredensial dari jabat tangan Google resmi
-					existingUser.googleId = account?.providerAccountId;
-					existingUser.youtubeChannelId = incomingYoutubeChannelId;
+					existingUser.googleId = account.providerAccountId;
+					existingUser.youtubeChannelId = youtubeChannelId;
 					await existingUser.save();
 					return true;
 				}
+
+				return "/error?error=AccountNotFound";
 			}
 
 			return true;
 		},
 
-		async jwt({ token, user }) {
+		async jwt({ token, user, trigger, session }) {
 			if (user) {
 				token.id = user.id;
 			}
 
-			if (token.email) {
+			if (trigger === "update" && session?.youtubeChannelId !== undefined) {
+				token.youtubeChannelId = session.youtubeChannelId;
+				return token;
+			}
+
+			if (user && token.email) {
 				await connectDB();
-				const dbUser = await User.findOne({ email: token.email });
-				if (dbUser) {
-					if (dbUser.youtubeChannelId) {
-						token.youtubeChannelId = dbUser.youtubeChannelId;
-					} else {
-						token.youtubeChannelId = null;
-					}
-				}
+				const dbUser = await User.findOne({ email: token.email }).select(
+					"_id youtubeChannelId",
+				);
+				token.id = dbUser?._id.toString();
+				token.youtubeChannelId = dbUser?.youtubeChannelId ?? null;
 			}
 
 			return token;

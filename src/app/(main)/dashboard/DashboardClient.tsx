@@ -4,15 +4,32 @@ import hideComment from "@/actions/moderateActions";
 import { scanVideo, TKomentarML } from "@/actions/scanActions";
 import Modal from "@/components/Modal";
 import { Session } from "next-auth";
-import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 const DashboardClient = ({ session }: { session: Session }) => {
+	const { update } = useSession();
+	const searchParams = useSearchParams();
+	const hasRefreshed = useRef(false);
+
 	const [hasilPrediksi, setHasilPrediksi] = useState<TKomentarML[]>([]);
 	const [isScanLoading, setIsScanLoading] = useState(false);
 	const [isHideLoading, setIsHideLoading] = useState(false);
 	const [error, setError] = useState("");
+	const [successMessage, setSuccessMessage] = useState("");
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	console.log(session.user);
+
+	useEffect(() => {
+		if (searchParams.get("linked") === "1" && !hasRefreshed.current) {
+			hasRefreshed.current = true;
+			update().then(() => {
+				setSuccessMessage("Channel YouTube berhasil ditautkan");
+				window.history.replaceState({}, "", "/dashboard");
+			});
+		}
+	}, [searchParams, update]);
 
 	useEffect(() => {
 		if (isModalOpen) {
@@ -35,13 +52,13 @@ const DashboardClient = ({ session }: { session: Session }) => {
 		const result = await scanVideo(videoUrl);
 
 		if (!result.success) {
-			console.error(result.message);
+			setError(result.message ?? "Terjadi kesalahan saat scan");
 			setIsScanLoading(false);
 			return;
 		}
 
 		if (result.data.hasil_analisis_ml.length == 0) {
-			setError("No comments on this video");
+			setError("Video ini tidak memiliki komentar");
 			setIsScanLoading(false);
 			return;
 		}
@@ -51,13 +68,13 @@ const DashboardClient = ({ session }: { session: Session }) => {
 		setIsScanLoading(false);
 	};
 
-	const spamCommentId = hasilPrediksi
-		.filter((comment) => comment.prediksi_svm_utama.label === "Spam")
-		.map((comment) => String(comment.komentar_id));
-	// console.log(spamCommentId);
+	const spamCommentIds = hasilPrediksi
+		.filter((c) => c.prediksi_svm_utama.label === "Spam")
+		.map((c) => String(c.komentar_id));
 
 	const handleHideComments = async () => {
-		if (spamCommentId.length == 0) return;
+		if (spamCommentIds.length == 0) return;
+
 		console.log(session.user);
 		if (!session.user.youtubeChannelId) {
 			setIsModalOpen(true);
@@ -66,13 +83,17 @@ const DashboardClient = ({ session }: { session: Session }) => {
 
 		setIsHideLoading(true);
 		setError("");
+		setSuccessMessage("");
 		try {
-			const result = await hideComment(spamCommentId);
+			const result = await hideComment(spamCommentIds);
 			console.log(result);
 			if (!result.success) {
-				setError(result.message);
+				setError(result.message ?? "Gagal menyembunyikan komentar");
 				return;
 			}
+			setSuccessMessage(
+				`${result.data.success ?? spamCommentIds.length} komentar berhasil disembunyikan`,
+			);
 		} catch (error) {
 			setError(`Terjadi kesalahan saat memproses permintaan: ${error}`);
 		} finally {
@@ -86,6 +107,11 @@ const DashboardClient = ({ session }: { session: Session }) => {
 			<div className="flex flex-col gap-7">
 				<div>
 					<p>Login as: {session.user.name}</p>
+					{session.user.youtubeChannelId ? (
+						<p className="text-green-500">Channel YouTube terhubung</p>
+					) : (
+						<p>Channel YouTube belum ditautkan</p>
+					)}
 				</div>
 
 				<form
@@ -112,29 +138,25 @@ const DashboardClient = ({ session }: { session: Session }) => {
 						disabled={isScanLoading}
 						className="p-1.5 bg-white text-black rounded-full cursor-pointer mt-3"
 					>
-						{isScanLoading ? "Processing..." : "Scan"}
+						{isScanLoading ? "Memproses..." : "Scan"}
 					</button>
 				</form>
 
 				{error && <p className="text-center">{error}</p>}
+				{successMessage && <p className="text-green-500">{successMessage}</p>}
 
-				{spamCommentId.length > 0 && (
+				{spamCommentIds.length > 0 && (
 					<button
 						type="button"
 						disabled={isHideLoading}
 						className="w-80 py-1.5 bg-white text-black rounded-full cursor-pointer mt-3 mx-auto"
 						onClick={handleHideComments}
 					>
-						{isHideLoading ? "Processing..." : "Hide spam comments"}
+						{isHideLoading
+							? "Processing..."
+							: `Sembunyikan ${spamCommentIds.length} komentar spam`}
 					</button>
 				)}
-
-				{/* <button
-					className="w-80 py-1.5 bg-white text-black rounded-full cursor-pointer mt-3 mx-auto"
-					onClick={() => setIsModalOpen(true)}
-				>
-					Open Modal
-				</button> */}
 
 				{hasilPrediksi.length > 0 && (
 					<table>

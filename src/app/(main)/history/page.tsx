@@ -27,6 +27,7 @@ const HistoryPage = async ({
 			.lean(),
 		ModerationHistory.countDocuments({ user_id: session?.user.id }),
 	]);
+	console.log(history);
 
 	const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
 
