@@ -121,21 +121,19 @@ export const authOptions: AuthOptions = {
 
 		async jwt({ token, user, trigger, session }) {
 			if (user) {
-				token.id = user.id;
-			}
-
-			if (trigger === "update" && session?.youtubeChannelId !== undefined) {
-				token.youtubeChannelId = session.youtubeChannelId;
-				return token;
-			}
-
-			if (user && token.email) {
 				await connectDB();
 				const dbUser = await User.findOne({ email: token.email }).select(
 					"_id youtubeChannelId",
 				);
-				token.id = dbUser?._id.toString();
-				token.youtubeChannelId = dbUser?.youtubeChannelId ?? null;
+
+				if (dbUser) {
+					token.id = dbUser._id.toString();
+					token.youtubeChannelId = dbUser.youtubeChannelId ?? null;
+				}
+			}
+
+			if (trigger === "update" && session?.youtubeChannelId !== undefined) {
+				token.youtubeChannelId = session.youtubeChannelId;
 			}
 
 			return token;

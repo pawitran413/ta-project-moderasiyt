@@ -4,12 +4,10 @@ import hideComment from "@/actions/moderateActions";
 import { scanVideo, TKomentarML } from "@/actions/scanActions";
 import Modal from "@/components/Modal";
 import { Session } from "next-auth";
-import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const DashboardClient = ({ session }: { session: Session }) => {
-	const { update } = useSession();
 	const searchParams = useSearchParams();
 	const hasRefreshed = useRef(false);
 
@@ -24,12 +22,11 @@ const DashboardClient = ({ session }: { session: Session }) => {
 	useEffect(() => {
 		if (searchParams.get("linked") === "1" && !hasRefreshed.current) {
 			hasRefreshed.current = true;
-			update().then(() => {
-				setSuccessMessage("Channel YouTube berhasil ditautkan");
-				window.history.replaceState({}, "", "/dashboard");
-			});
+
+			setSuccessMessage("Channel YouTube berhasil ditautkan");
+			window.history.replaceState({}, "", "/dashboard");
 		}
-	}, [searchParams, update]);
+	}, [searchParams]);
 
 	useEffect(() => {
 		if (isModalOpen) {
@@ -45,7 +42,7 @@ const DashboardClient = ({ session }: { session: Session }) => {
 
 	const handleSubmit = async (event: React.SubmitEvent) => {
 		event.preventDefault();
-		setSuccessMessage("")
+		setSuccessMessage("");
 		setIsScanLoading(true);
 		setError("");
 		const videoUrl = event.target.urlVideo.value;
@@ -165,7 +162,9 @@ const DashboardClient = ({ session }: { session: Session }) => {
 				</form>
 
 				{error && <p className="text-center">{error}</p>}
-				{successMessage && <p className="text-green-500 text-center">{successMessage}</p>}
+				{successMessage && (
+					<p className="text-green-500 text-center">{successMessage}</p>
+				)}
 
 				{spamCommentIds.length > 0 && (
 					<button
