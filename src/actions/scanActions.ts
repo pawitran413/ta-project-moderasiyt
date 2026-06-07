@@ -24,6 +24,7 @@ type TMLResponse = {
 	video_id?: string;
 	video_url: string;
 	judul_video?: string;
+	channel_id: string;
 	hasil_analisis_ml: TKomentarML[];
 };
 

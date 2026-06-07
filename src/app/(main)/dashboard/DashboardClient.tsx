@@ -19,7 +19,7 @@ const DashboardClient = ({ session }: { session: Session }) => {
 	const [error, setError] = useState("");
 	const [successMessage, setSuccessMessage] = useState("");
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	// console.log(session.user);
+	const [ownerCurrentVideo, setOwnerCurrentVideo] = useState("");
 
 	useEffect(() => {
 		if (searchParams.get("linked") === "1" && !hasRefreshed.current) {
@@ -45,6 +45,7 @@ const DashboardClient = ({ session }: { session: Session }) => {
 
 	const handleSubmit = async (event: React.SubmitEvent) => {
 		event.preventDefault();
+		setSuccessMessage("")
 		setIsScanLoading(true);
 		setError("");
 		const videoUrl = event.target.urlVideo.value;
@@ -75,6 +76,7 @@ const DashboardClient = ({ session }: { session: Session }) => {
 			{ spam: [] as TKomentarML[], normal: [] as TKomentarML[] },
 		);
 		const filteredMlData = [...labelMlData.spam, ...labelMlData.normal];
+		setOwnerCurrentVideo(result.data.channel_id);
 
 		setHasilPrediksi(filteredMlData);
 		event.target.reset();
@@ -91,6 +93,13 @@ const DashboardClient = ({ session }: { session: Session }) => {
 		// console.log(session.user);
 		if (!session.user.youtubeChannelId) {
 			setIsModalOpen(true);
+			return;
+		}
+
+		if (ownerCurrentVideo !== session.user.youtubeChannelId) {
+			setError(
+				"Hanya pemilik video yang diizinkan menyembunyikan komentar spam",
+			);
 			return;
 		}
 
@@ -156,7 +165,7 @@ const DashboardClient = ({ session }: { session: Session }) => {
 				</form>
 
 				{error && <p className="text-center">{error}</p>}
-				{successMessage && <p className="text-green-500">{successMessage}</p>}
+				{successMessage && <p className="text-green-500 text-center">{successMessage}</p>}
 
 				{spamCommentIds.length > 0 && (
 					<button
