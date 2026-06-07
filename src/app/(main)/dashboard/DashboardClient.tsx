@@ -19,7 +19,7 @@ const DashboardClient = ({ session }: { session: Session }) => {
 	const [error, setError] = useState("");
 	const [successMessage, setSuccessMessage] = useState("");
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	console.log(session.user);
+	// console.log(session.user);
 
 	useEffect(() => {
 		if (searchParams.get("linked") === "1" && !hasRefreshed.current) {
@@ -63,7 +63,20 @@ const DashboardClient = ({ session }: { session: Session }) => {
 			return;
 		}
 
-		setHasilPrediksi(result.data.hasil_analisis_ml);
+		const labelMlData = result.data.hasil_analisis_ml.reduce(
+			(acc, l) => {
+				if (l.prediksi_svm_utama.label === "Spam") {
+					acc.spam.push(l);
+				} else {
+					acc.normal.push(l);
+				}
+				return acc;
+			},
+			{ spam: [] as TKomentarML[], normal: [] as TKomentarML[] },
+		);
+		const filteredMlData = [...labelMlData.spam, ...labelMlData.normal];
+
+		setHasilPrediksi(filteredMlData);
 		event.target.reset();
 		setIsScanLoading(false);
 	};
@@ -75,7 +88,7 @@ const DashboardClient = ({ session }: { session: Session }) => {
 	const handleHideComments = async () => {
 		if (spamCommentIds.length == 0) return;
 
-		console.log(session.user);
+		// console.log(session.user);
 		if (!session.user.youtubeChannelId) {
 			setIsModalOpen(true);
 			return;
@@ -86,7 +99,7 @@ const DashboardClient = ({ session }: { session: Session }) => {
 		setSuccessMessage("");
 		try {
 			const result = await hideComment(spamCommentIds);
-			console.log(result);
+			// console.log(result);
 			if (!result.success) {
 				setError(result.message ?? "Gagal menyembunyikan komentar");
 				return;
