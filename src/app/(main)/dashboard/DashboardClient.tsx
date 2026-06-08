@@ -1,124 +1,47 @@
 "use client";
 
-import hideComment from "@/actions/moderateActions";
-import { scanVideo, TKomentarML } from "@/actions/scanActions";
 import Modal from "@/components/Modal";
+import ResultTable from "@/components/ResultTable";
+import ScanForm from "@/components/ScanForm";
+import { useHideComments } from "@/hooks/useHideComments";
+import { useLinkedNotification } from "@/hooks/useLinkedNotification";
+import { useScanVideo } from "@/hooks/useScanVideo";
 import { Session } from "next-auth";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 const DashboardClient = ({ session }: { session: Session }) => {
-	const searchParams = useSearchParams();
-	const hasRefreshed = useRef(false);
-
-	const [hasilPrediksi, setHasilPrediksi] = useState<TKomentarML[]>([]);
-	const [isScanLoading, setIsScanLoading] = useState(false);
-	const [isHideLoading, setIsHideLoading] = useState(false);
-	const [error, setError] = useState("");
-	const [successMessage, setSuccessMessage] = useState("");
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	const [ownerCurrentVideo, setOwnerCurrentVideo] = useState("");
+
+	const { linkedSuccess } = useLinkedNotification();
+	const {
+		hasilPrediksi,
+		ownerCurrentVideo,
+		isScanLoading,
+		scanError,
+		handleSubmit,
+	} = useScanVideo();
+	const {
+		spamCommentIds,
+		isHideLoading,
+		hideError,
+		hideSuccess,
+		handleHideComments,
+	} = useHideComments({
+		hasilPrediksi,
+		ownerCurrentVideo,
+		youtubeChannelId: session.user.youtubeChannelId,
+		onNotLinked: () => setIsModalOpen(true),
+	});
 
 	useEffect(() => {
-		if (searchParams.get("linked") === "1" && !hasRefreshed.current) {
-			hasRefreshed.current = true;
-
-			setSuccessMessage("Channel YouTube berhasil ditautkan");
-			window.history.replaceState({}, "", "/dashboard");
-		}
-	}, [searchParams]);
-
-	useEffect(() => {
-		if (isModalOpen) {
-			document.body.style.overflow = "hidden";
-		} else {
-			document.body.style.overflow = "unset";
-		}
-
+		document.body.style.overflow = isModalOpen ? "hidden" : "unset";
 		return () => {
 			document.body.style.overflow = "unset";
 		};
 	}, [isModalOpen]);
 
-	const handleSubmit = async (event: React.SubmitEvent) => {
-		event.preventDefault();
-		setSuccessMessage("");
-		setIsScanLoading(true);
-		setError("");
-		const videoUrl = event.target.urlVideo.value;
-
-		const result = await scanVideo(videoUrl);
-
-		if (!result.success) {
-			setError(result.message ?? "Terjadi kesalahan saat scan");
-			setIsScanLoading(false);
-			return;
-		}
-
-		if (result.data.hasil_analisis_ml.length == 0) {
-			setError("Video ini tidak memiliki komentar");
-			setIsScanLoading(false);
-			return;
-		}
-
-		const labelMlData = result.data.hasil_analisis_ml.reduce(
-			(acc, l) => {
-				if (l.prediksi_svm_utama.label === "Spam") {
-					acc.spam.push(l);
-				} else {
-					acc.normal.push(l);
-				}
-				return acc;
-			},
-			{ spam: [] as TKomentarML[], normal: [] as TKomentarML[] },
-		);
-		const filteredMlData = [...labelMlData.spam, ...labelMlData.normal];
-		setOwnerCurrentVideo(result.data.channel_id);
-
-		setHasilPrediksi(filteredMlData);
-		event.target.reset();
-		setIsScanLoading(false);
-	};
-
-	const spamCommentIds = hasilPrediksi
-		.filter((c) => c.prediksi_svm_utama.label === "Spam")
-		.map((c) => String(c.komentar_id));
-
-	const handleHideComments = async () => {
-		if (spamCommentIds.length == 0) return;
-
-		// console.log(session.user);
-		if (!session.user.youtubeChannelId) {
-			setIsModalOpen(true);
-			return;
-		}
-
-		if (ownerCurrentVideo !== session.user.youtubeChannelId) {
-			setError(
-				"Hanya pemilik video yang diizinkan menyembunyikan komentar spam",
-			);
-			return;
-		}
-
-		setIsHideLoading(true);
-		setError("");
-		setSuccessMessage("");
-		try {
-			const result = await hideComment(spamCommentIds);
-			// console.log(result);
-			if (!result.success) {
-				setError(result.message ?? "Gagal menyembunyikan komentar");
-				return;
-			}
-			setSuccessMessage(
-				`${result.data.success ?? spamCommentIds.length} komentar berhasil disembunyikan`,
-			);
-		} catch (error) {
-			setError(`Terjadi kesalahan saat memproses permintaan: ${error}`);
-		} finally {
-			setIsHideLoading(false);
-		}
-	};
+	const feedbackMessage = hideSuccess || linkedSuccess;
+	const errorMessage = scanError || hideError;
 
 	return (
 		<>
@@ -133,37 +56,11 @@ const DashboardClient = ({ session }: { session: Session }) => {
 					)}
 				</div>
 
-				<form
-					className="flex flex-col gap-3 w-100 mx-auto border border-white/25 p-5 rounded-lg"
-					onSubmit={handleSubmit}
-				>
-					<div className="flex flex-col gap-1">
-						<label htmlFor="urlVideo" className="px-4 text-center">
-							URL Video YouTube
-						</label>
-						<input
-							type="url"
-							name="urlVideo"
-							id="urlVideo"
-							pattern="https:\/\/(www\.)?(youtube\.com|youtu\.be).*"
-							placeholder="https://www.youtube.com/watch?v=tGv7CUutzqU"
-							className="py-1.5 px-4 rounded-full border border-[#ccc]/25"
-							required
-						/>
-					</div>
+				<ScanForm isScanLoading={isScanLoading} onSubmit={handleSubmit} />
 
-					<button
-						type="submit"
-						disabled={isScanLoading}
-						className="p-1.5 bg-white text-black rounded-full cursor-pointer mt-3"
-					>
-						{isScanLoading ? "Memproses..." : "Scan"}
-					</button>
-				</form>
-
-				{error && <p className="text-center">{error}</p>}
-				{successMessage && (
-					<p className="text-green-500 text-center">{successMessage}</p>
+				{errorMessage && <p className="text-center">{errorMessage}</p>}
+				{feedbackMessage && (
+					<p className="text-green-500 text-center">{feedbackMessage}</p>
 				)}
 
 				{spamCommentIds.length > 0 && (
@@ -179,37 +76,7 @@ const DashboardClient = ({ session }: { session: Session }) => {
 					</button>
 				)}
 
-				{hasilPrediksi.length > 0 && (
-					<table>
-						<thead>
-							<tr>
-								<th className="whitespace-nowrap px-2">Label SVM</th>
-								<th className="whitespace-nowrap px-2">Label NB</th>
-								<th>Komentar</th>
-							</tr>
-						</thead>
-						<tbody>
-							{hasilPrediksi.map((data, index) => (
-								<tr
-									key={index}
-									className="border-b border-white/15 last:border-none"
-								>
-									<td
-										className={`text-center ${data.prediksi_svm_utama.label == "Spam" && "text-red-600"}`}
-									>
-										{data.prediksi_svm_utama.label}
-									</td>
-									<td
-										className={`text-center ${data.prediksi_nb_pembanding.label == "Spam" && "text-red-600"}`}
-									>
-										{data.prediksi_nb_pembanding.label}
-									</td>
-									<td className="pl-4 py-2">{data.teks_komentar}</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				)}
+				<ResultTable hasilPrediksi={hasilPrediksi} />
 			</div>
 		</>
 	);
