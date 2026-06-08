@@ -65,7 +65,7 @@ export const useHideComments = ({
 				return;
 			}
 			setHideSuccess(
-				`${result.data.success ?? spamCommentIds.length} komentar berhasil disembunyikan`,
+				`${result.data?.success ?? spamCommentIds.length} komentar berhasil disembunyikan`,
 			);
 		} catch (error) {
 			setHideError(`Terjadi kesalahan saat memproses permintaan: ${error}`);
