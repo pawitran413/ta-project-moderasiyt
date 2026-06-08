@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import hideComment from "@/actions/moderateActions";
 import { TKomentarML } from "@/actions/scanActions";
@@ -28,6 +28,13 @@ export const useHideComments = ({
 	const [isHideLoading, setIsHideLoading] = useState(false);
 	const [hideError, setHideError] = useState("");
 	const [hideSuccess, setHideSuccess] = useState("");
+	const [prevHasilPrediksi, setPrevHasilPrediksi] = useState(hasilPrediksi);
+
+	if (hasilPrediksi !== prevHasilPrediksi) {
+		setPrevHasilPrediksi(hasilPrediksi);
+		setHideError("");
+		setHideSuccess("");
+	}
 
 	const spamCommentIds = hasilPrediksi
 		.filter((c) => c.prediksi_svm_utama.label === "Spam")
