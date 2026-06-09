@@ -6,6 +6,7 @@ import ScanForm from "@/components/ScanForm";
 import { useHideComments } from "@/hooks/useHideComments";
 import { useLinkedNotification } from "@/hooks/useLinkedNotification";
 import { useScanVideo } from "@/hooks/useScanVideo";
+import downloadToCsv from "@/utils/downloadToCsv";
 import { Session } from "next-auth";
 import { useEffect, useState } from "react";
 
@@ -46,7 +47,7 @@ const DashboardClient = ({ session }: { session: Session }) => {
 	return (
 		<>
 			{isModalOpen && <Modal setIsModalOpen={setIsModalOpen} />}
-			<div className="flex flex-col gap-7">
+			<div className="flex flex-col gap-7 items-center">
 				<div>
 					<p>Login as: {session.user.name}</p>
 					{session.user.youtubeChannelId ? (
@@ -62,19 +63,28 @@ const DashboardClient = ({ session }: { session: Session }) => {
 				{feedbackMessage && (
 					<p className="text-green-500 text-center">{feedbackMessage}</p>
 				)}
-
-				{spamCommentIds.length > 0 && (
-					<button
-						type="button"
-						disabled={isHideLoading}
-						className="w-80 py-1.5 bg-white text-black rounded-full cursor-pointer mt-3 mx-auto"
-						onClick={handleHideComments}
-					>
-						{isHideLoading
-							? "Processing..."
-							: `Sembunyikan ${spamCommentIds.length} komentar spam`}
-					</button>
-				)}
+				<div className="flex gap-5">
+					{spamCommentIds.length > 0 && (
+						<button
+							type="button"
+							disabled={isHideLoading}
+							className="w-80 py-1.5 bg-white text-black rounded-full cursor-pointer mt-3 mx-auto"
+							onClick={handleHideComments}
+						>
+							{isHideLoading
+								? "Processing..."
+								: `Sembunyikan ${spamCommentIds.length} komentar spam`}
+						</button>
+					)}
+					{hasilPrediksi.length > 0 && (
+						<button
+							onClick={() => downloadToCsv(hasilPrediksi)}
+							className="w-80 py-1.5 bg-white text-black rounded-full cursor-pointer mt-3 mx-auto"
+						>
+							Unduh hasil prediksi
+						</button>
+					)}
+				</div>
 
 				<ResultTable hasilPrediksi={hasilPrediksi} />
 			</div>
