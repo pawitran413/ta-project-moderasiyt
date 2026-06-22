@@ -20,6 +20,26 @@ declare module "next-auth/jwt" {
 	}
 }
 
+async function fetchYoutubeChannelId(
+	accessToken: string | undefined,
+): Promise<string | null> {
+	if (!accessToken) return null;
+
+	try {
+		const ytRes = await fetch(
+			"https://www.googleapis.com/youtube/v3/channels?part=id&mine=true",
+			{
+				headers: { Authorization: `Bearer ${accessToken}` },
+			},
+		);
+		const ytData = await ytRes.json();
+		return ytData.items?.[0]?.id ?? null;
+	} catch (error) {
+		console.error("Gagal mengambil ID channel YouTube: ", error);
+		return null;
+	}
+}
+
 export const authOptions: AuthOptions = {
 	providers: [
 		CredentialsProvider({
@@ -53,6 +73,10 @@ export const authOptions: AuthOptions = {
 					throw new Error("Email atau password salah");
 				}
 
+				if (!user.emailVerified) {
+					throw new Error("EmailNotVerified");
+				}
+
 				return {
 					id: user._id.toString(),
 					email: user.email,
@@ -73,47 +97,58 @@ export const authOptions: AuthOptions = {
 		}),
 	],
 	callbacks: {
-		async signIn({ user, account }) {
+		async signIn({ user, account, profile }) {
 			if (account?.provider === "credentials") return true;
 
 			if (account?.provider === "google") {
 				if (!user.email) return false;
+
+				const googleEmailVerified =
+					(profile as { email_verified?: boolean } | undefined)
+						?.email_verified === true;
+
+				if (!googleEmailVerified) {
+					return "/error?error=GoogleEmailNotVerified";
+				}
+
 				await connectDB();
 
-				let youtubeChannelId: string | null = null;
-				try {
-					const ytRes = await fetch(
-						"https://www.googleapis.com/youtube/v3/channels?part=id&mine=true",
-						{
-							headers: {
-								Authorization: `Bearer ${account.access_token}`,
-							},
-						},
-					);
-					const ytData = await ytRes.json();
-					youtubeChannelId = ytData.items?.[0]?.id ?? null;
-				} catch {
-					return "/error?error=YoutubeChannelFetchFailed";
-				}
+				const youtubeChannelId = await fetchYoutubeChannelId(
+					account.access_token,
+				);
 
-				if (!youtubeChannelId) {
-					return "/error?error=NoYoutubeChannel";
-				}
-
-				const channelOccupied = await User.findOne({ youtubeChannelId });
-				if (channelOccupied && channelOccupied.email !== user.email) {
-					return "/error?error=ChannelAlreadyLinked";
+				if (youtubeChannelId) {
+					const channelOccupied = await User.findOne({ youtubeChannelId });
+					if (channelOccupied && channelOccupied.email !== user.email) {
+						return "/error?error=ChannelAlreadyLinked";
+					}
 				}
 
 				const existingUser = await User.findOne({ email: user.email });
+
 				if (existingUser) {
 					existingUser.googleId = account.providerAccountId;
-					existingUser.youtubeChannelId = youtubeChannelId;
+					if (youtubeChannelId) {
+						existingUser.youtubeChannelId = youtubeChannelId;
+					}
+					if (!existingUser.emailVerified) {
+						existingUser.emailVerified = new Date();
+					}
 					await existingUser.save();
 					return true;
 				}
 
-				return "/error?error=AccountNotFound";
+				await User.create({
+					name: user.name || profile?.name || "Pengguna Google",
+					email: user.email,
+					googleId: account.providerAccountId,
+					youtubeChannelId,
+					provider: "google",
+					emailVerified: new Date(),
+					botVerified: false,
+				});
+
+				return true;
 			}
 
 			return true;

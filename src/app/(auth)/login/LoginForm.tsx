@@ -2,12 +2,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import React, { useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import GoogleIcon from "@/components/icons/GoogleIcon";
+
+const ERROR_MESSAGE: Record<string, string> = {
+	EmailNotVerified:
+		"Email Anda belum diverifikasi. Cek kotak masuk email Anda.",
+};
 
 const LoginForm = () => {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const callbackUrl = searchParams.get("callbackUrl") || "/";
 	const [isLoading, setIsLoading] = useState(false);
+	const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 	const [error, setError] = useState("");
 
 	const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
@@ -29,7 +36,7 @@ const LoginForm = () => {
 			setIsLoading(false);
 
 			if (result?.error) {
-				setError(result.error);
+				setError(ERROR_MESSAGE[result.error] || result.error);
 				return;
 			}
 
@@ -39,6 +46,11 @@ const LoginForm = () => {
 			setIsLoading(false);
 			setError("Terjadi kesalahan");
 		}
+	};
+
+	const handleGoogleSignIn = async () => {
+		setIsGoogleLoading(true);
+		await signIn("google", { callbackUrl });
 	};
 
 	return (
@@ -77,6 +89,23 @@ const LoginForm = () => {
 					{isLoading ? "Memproses..." : "Login"}
 				</button>
 			</form>
+
+			<button
+				type="button"
+				onClick={handleGoogleSignIn}
+				disabled={isGoogleLoading}
+				className="w-full p-2 bg-white text-black rounded-sm cursor-pointer flex items-center justify-center gap-2"
+			>
+				{isGoogleLoading ? (
+					"Mengarahkan..."
+				) : (
+					<>
+						<GoogleIcon />
+						Login dengan Google
+					</>
+				)}
+			</button>
+
 			<p className="text-center mt-4">
 				Belum punya akun?{" "}
 				<Link href={"/register"} className="text-blue-600">

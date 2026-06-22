@@ -19,7 +19,7 @@ const Modal = ({
 
 	return (
 		<div
-			className="inset-0 w-full h-full bg-black/50 absolute z-10 flex justify-center items-center backdrop-blur-sm"
+			className="inset-0 w-full h-full bg-black/50 fixed z-10 flex justify-center items-center backdrop-blur-sm"
 			onClick={(e) => {
 				if (e.target === e.currentTarget) {
 					setIsModalOpen(false);

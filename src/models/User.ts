@@ -10,6 +10,10 @@ export interface IUser {
 	botVerified: boolean;
 	provider: "credentials" | "google";
 	emailVerified: Date | null;
+	emailVerificationTokenHash?: string | null;
+	emailVerificationExpires?: Date | null;
+	passwordResetTokenHash?: string | null;
+	passwordResetExpires?: Date | null;
 }
 
 export interface IUserDocument extends IUser, Document {
@@ -48,6 +52,14 @@ const UserSchema = new mongoose.Schema<IUserDocument>(
 			required: true,
 		},
 		emailVerified: { type: Date, default: null },
+		emailVerificationTokenHash: {
+			type: String,
+			default: null,
+			select: false,
+		},
+		emailVerificationExpires: { type: Date, default: null, select: false },
+		passwordResetTokenHash: { type: String, default: null, select: false },
+		passwordResetExpires: { type: Date, default: null, select: false },
 	},
 	{ timestamps: true },
 );
