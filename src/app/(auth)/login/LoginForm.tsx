@@ -54,64 +54,76 @@ const LoginForm = () => {
 	};
 
 	return (
-		<div className="w-100 my-12.25 mx-auto p-5 border border-gray-300/10 rounded-lg">
-			<h2 className="text-center font-bold text-xl mb-4">Login</h2>
-			{error && <p className="p-2 rounded-sm">{error}</p>}
+		<div className="w-screen h-screen flex justify-center items-center">
+			<div className="w-100 p-5 border border-gray-300/30 rounded-lg">
+				<h2 className="text-center font-bold text-xl mb-4">Login</h2>
+				{error && <p className="p-2 rounded-sm">{error}</p>}
 
-			<form onSubmit={handleSubmit} className="flex flex-col gap-3">
-				<div className="flex flex-col">
-					<label htmlFor="email">Email</label>
-					<input
-						type="email"
-						name="email"
-						id="email"
-						required
-						className="p-1 rounded-sm border border-[#ccc]/10"
-					/>
-				</div>
+				<form onSubmit={handleSubmit} className="flex flex-col gap-3">
+					<div className="flex flex-col gap-1">
+						<label htmlFor="email" className="text px-4 text-white/70">
+							Email
+						</label>
+						<input
+							type="email"
+							name="email"
+							id="email"
+							required
+							className="py-1.5 px-4 rounded-full border border-white/15 bg-transparent placeholder:text-white/30 focus:outline-none focus:border-white/40 transition-colors"
+						/>
+					</div>
 
-				<div className="flex flex-col">
-					<label htmlFor="password">Password</label>
-					<input
-						type="password"
-						name="password"
-						id="password"
-						required
-						className="p-1 rounded-sm border border-[#ccc]/10"
-					/>
+					<div className="flex flex-col gap-1">
+						<label htmlFor="password" className="text px-4 text-white/70">
+							Password
+						</label>
+						<input
+							type="password"
+							name="password"
+							id="password"
+							required
+							className="py-1.5 px-4 rounded-full border border-white/15 bg-transparent placeholder:text-white/30 focus:outline-none focus:border-white/40 transition-colors"
+						/>
+					</div>
+
+					<button
+						type="submit"
+						disabled={isLoading}
+						className="p-1.5 bg-white text-black rounded-full cursor-pointer mt-5 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+					>
+						{isLoading ? "Memproses..." : "Login"}
+					</button>
+				</form>
+
+				<div className="flex items-center gap-3 my-4">
+					<hr className="w-full text-white/20" />
+					<span className="text-sm text-white/50">atau</span>
+					<hr className="w-full text-white/20" />
 				</div>
 
 				<button
-					type="submit"
-					disabled={isLoading}
-					className="p-2 bg-[#4f46e5] text-white rounded-sm cursor-pointer mt-3"
+					type="button"
+					onClick={handleGoogleSignIn}
+					disabled={isGoogleLoading}
+					className="w-full p-1.5 bg-white text-black rounded-full cursor-pointer flex items-center justify-center gap-2"
 				>
-					{isLoading ? "Memproses..." : "Login"}
+					{isGoogleLoading ? (
+						"Mengarahkan..."
+					) : (
+						<>
+							<GoogleIcon />
+							Login dengan Google
+						</>
+					)}
 				</button>
-			</form>
 
-			<button
-				type="button"
-				onClick={handleGoogleSignIn}
-				disabled={isGoogleLoading}
-				className="w-full p-2 bg-white text-black rounded-sm cursor-pointer flex items-center justify-center gap-2"
-			>
-				{isGoogleLoading ? (
-					"Mengarahkan..."
-				) : (
-					<>
-						<GoogleIcon />
-						Login dengan Google
-					</>
-				)}
-			</button>
-
-			<p className="text-center mt-4">
-				Belum punya akun?{" "}
-				<Link href={"/register"} className="text-blue-600">
-					Register
-				</Link>
-			</p>
+				<p className="text-center mt-4">
+					Belum punya akun?{" "}
+					<Link href={"/register"} className="text-blue-600">
+						Register
+					</Link>
+				</p>
+			</div>
 		</div>
 	);
 };
