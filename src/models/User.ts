@@ -7,7 +7,6 @@ export interface IUser {
 	password?: string;
 	googleId?: string;
 	youtubeChannelId?: string | null;
-	botVerified: boolean;
 	provider: "credentials" | "google";
 	emailVerified: Date | null;
 	emailVerificationTokenHash?: string | null;
@@ -45,7 +44,6 @@ const UserSchema = new mongoose.Schema<IUserDocument>(
 			unique: true,
 			sparse: true,
 		},
-		botVerified: { type: Boolean, default: false },
 		provider: {
 			type: String,
 			enum: ["credentials", "google"],

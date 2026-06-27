@@ -20,7 +20,10 @@ const hideComment = async (spamCommentId: string[]) => {
 	try {
 		const response = await fetch(`${process.env.BACKEND_ML_URL}/moderate`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: {
+				"Content-Type": "application/json",
+				"X-API-Key": `${process.env.INTERNAL_API_KEY}`,
+			},
 			body: JSON.stringify({
 				comment_ids: spamCommentId,
 				moderation_status: "heldForReview",

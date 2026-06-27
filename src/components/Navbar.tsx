@@ -29,7 +29,7 @@ const Navbar = () => {
 				))}
 			</div>
 			<button
-				className="cursor-pointer bg-amber-300"
+				className="cursor-pointer"
 				onClick={() => setIsProfileOpen((prev) => !prev)}
 			>
 				<ProfileIcon />

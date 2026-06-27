@@ -10,7 +10,7 @@ const ScanSummary = ({ hasilPrediksi }: { hasilPrediksi: TKomentarML[] }) => {
 
 	const summary = [
 		{ label: "Komentar dipindai", value: hasilPrediksi.length },
-		{ label: "Terdeteksi spam", value: totalSpam, accent: "text-red-400" },
+		{ label: "Spam", value: totalSpam, accent: "text-red-400" },
 		{ label: "Normal", value: totalNormal, accent: "text-green-400" },
 	];
 

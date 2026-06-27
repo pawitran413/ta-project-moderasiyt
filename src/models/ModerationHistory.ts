@@ -26,7 +26,7 @@ interface IHasilAnalisisMl {
 }
 
 interface IStatusTindakan {
-	tindakan_diambil: "Menunggu Review" | "Dihapus";
+	tindakan_diambil: "Menunggu Review" | "Disembunyikan";
 	timestamp_tindakan: Date;
 	catatan_sistem?: string;
 }
@@ -81,7 +81,7 @@ const ModerationHistorySchema = new Schema<IModerationHistoryDocument>(
 		status_tindakan: {
 			tindakan_diambil: {
 				type: String,
-				enum: ["Menunggu Review", "Dihapus"],
+				enum: ["Menunggu Review", "Disembunyikan"],
 				default: "Menunggu Review",
 			},
 			timestamp_tindakan: { type: Date, default: Date.now },

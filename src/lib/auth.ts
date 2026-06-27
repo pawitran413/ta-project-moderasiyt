@@ -145,7 +145,6 @@ export const authOptions: AuthOptions = {
 					youtubeChannelId,
 					provider: "google",
 					emailVerified: new Date(),
-					botVerified: false,
 				});
 
 				return true;
