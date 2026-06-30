@@ -12,7 +12,7 @@ const ERROR_MESSAGE: Record<string, string> = {
 const LoginForm = () => {
 	const router = useRouter();
 	const searchParams = useSearchParams();
-	const callbackUrl = searchParams.get("callbackUrl") || "/";
+	const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 	const [isLoading, setIsLoading] = useState(false);
 	const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 	const [error, setError] = useState("");
