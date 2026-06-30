@@ -1,6 +1,7 @@
 import Link from "next/link";
 import HowItWorks from "@/components/HowItWorks";
 import Footer from "@/components/Footer";
+import Features from "@/components/Features";
 
 export default function Home() {
 	return (
@@ -39,6 +40,7 @@ export default function Home() {
 				</p>
 			</main>
 			<HowItWorks />
+			<Features/>
 			<Footer />
 		</div>
 	);
