@@ -29,7 +29,7 @@ const Navbar = () => {
 				))}
 			</div>
 			<button
-				className="cursor-pointer"
+				className="flex items-center cursor-pointer"
 				onClick={() => setIsProfileOpen((prev) => !prev)}
 			>
 				<ProfileIcon />
