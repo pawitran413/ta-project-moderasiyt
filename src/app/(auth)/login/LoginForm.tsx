@@ -54,7 +54,7 @@ const LoginForm = () => {
 	};
 
 	return (
-		<div className="w-screen h-screen flex justify-center items-center">
+		<div className="w-screen h-screen flex justify-center items-center p-5">
 			<div className="w-100 p-5 border border-gray-300/30 rounded-lg">
 				<h2 className="text-center font-bold text-xl mb-4">Login</h2>
 				{error && <p className="p-2 rounded-sm">{error}</p>}
