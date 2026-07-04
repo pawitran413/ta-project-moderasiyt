@@ -60,8 +60,12 @@ export const authOptions: AuthOptions = {
 					email: credentials.email.toLowerCase(),
 				}).select("+password");
 
-				if (!user || !user.password) {
+				if (!user) {
 					throw new Error("Email atau password salah");
+				}
+
+				if (!user.password) {
+					throw new Error("Akun ini terdaftar menggunakan Google")
 				}
 
 				const isPasswordValid = await bcrypt.compare(
